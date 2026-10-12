@@ -1,5 +1,5 @@
 # CpuList and CpuFreq
-CpuList and CpuFreq two great little utils I wrote for managing intel CPU speed and temp. The names are not so originals.
+CpuList and CpuFreq two great little utils I wrote for managing intel CPU speed and temp. The names are not so originals. CpuList is written in D and CpuFreq is written in BASH shell.
 
 Example run:
 
