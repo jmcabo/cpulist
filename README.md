@@ -102,6 +102,8 @@ The programs I used to stimulate the CPU are my stupid find prime number benchma
         Elapsed: 55.031s
         71588 prime numbers were found between 2 and 904500
 
+That one is a very soft benchmark, very light on the CPU. It only uses one core. It is single threaded. You can use up all 4, 8 or however many cores you have by running it on 8 consoles at a time, or by launching it with a loop and the nohup command or an ampersand &.
+
 Ohhh, you might prefer the schedutil governor. In that case, intel_pstate=disabled must be passed to grub. For that, a file in /etc/default/grub.d/ cpufreq_driver_intelpstate_disable_jmc.cfg file can be created:
 
         nadie@tina:/etc/default$ cat grub.d/cpufreq_driver_intelpstate_disable_jmc.cfg 
