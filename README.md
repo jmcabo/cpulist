@@ -119,6 +119,7 @@ and don't forget to call sudo update-grub after that:
 but if the available frequencies don't include 3.4GHz, then it's preferred to go without schedutil and use the performance driver of intel pstates instead. That may happen in laptops which don't reach 3.4GHz without turbo, that is, it's higher than their nominal speed.
 
 Good luck!
+
 --JMC 2026-10-11
 
 Supplementary files:
@@ -135,5 +136,6 @@ B)
 
 Cheers!
 Good Luck!
+
 --jm
 
