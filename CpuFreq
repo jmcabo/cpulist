@@ -1,0 +1,289 @@
+#!/bin/bash
+#CpuFreq 1.2 by JMC - Set the CPU speed so that it doesn't overheat on long running stuff or firefox/chrome bad behaving tabs.
+#Created: 2024-10-05
+#Updated: 2026-10-11
+
+#Quick hardcoded command on which this script was inspired:
+#
+#    for a in `seq 0 7`; do echo 2500000 | sudo tee /sys/devices/system/cpu/cpu$a/cpufreq/scaling_max_freq; done  #CpuFreq
+#
+
+#Usage:
+#   CpuFreq          sets the default
+#   CpuFreq 25       sets to 2500000 (abbreviation mode)
+#   CpuFreq 2500000  sets to 2500000
+#   CpuFreq 123      (or any non matching number): errors out and lists available frequencies
+#   CpuFreq turbo    restore the maximum frequency.
+
+
+#Configuration:
+DEFAULT_FREQ="2500000"
+AVAILABLE_FREQS="/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies"
+AVAILABLE_GOVERNORS="/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors"
+MAX_FREQS="/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"
+MIN_FREQS="/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq"
+CURRENT_FREQ_FILENAME="/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq"
+CURRENT_GOVERNOR_FILENAME="/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
+
+VALID_LAPTOP_HOSTNAME="tina"
+VALID_PC_HOSTNAME="lolita"
+CURRENT_HOSTNAME=$(hostname 2>/dev/null || echo "UNKNOWN")
+
+#Global:
+RED='\e[0;31m'
+GREEN='\e[1;32m'
+YELLOWBOLD='\e[1;33m'
+BGCOLOR='\e[0;41m'
+NOCOLOR='\e[0m'
+if [ ! -t 1 ]; then  #Output redirected, don't show color.
+    RED=''
+    GREEN=''
+    YELLOWBOLD=''
+    BGCOLOR=''
+    NOCOLOR=''
+fi
+
+
+
+#Command line switches variables:
+SHOW_HELP=0
+NO_MESSAGES=0
+DRY_RUN=0
+PERFORMANCE=0
+POWERSAVE=0
+DONT_BEEP=0
+OPTION_PAUSE=0
+OVERRIDE_HOSTNAME_CHECK=0
+NEWFREQ=0
+SET_GOVERNOR=0
+GOVERNOR=""
+
+
+#Parse command line:
+while [ $# -gt 0 ]; do
+    case $1 in
+        -q|--quiet)
+            NO_MESSAGES=1
+            shift
+            ;;
+        -p|--performance)
+            PERFORMANCE=1
+            GOVERNOR="performance"
+            SET_GOVERNOR=1
+            shift
+            ;;
+        -s|--powersave)
+            POWERSAVE=1
+            GOVERNOR="powersave"
+            SET_GOVERNOR=1
+            shift
+            ;;
+        -g|--governor)
+            GOVERNOR="$2"
+            SET_GOVERNOR=1
+            shift
+            shift
+            ;;
+        -o|--override-host)
+            OVERRIDE_HOSTNAME_CHECK=1
+            shift
+            ;;
+        -n|--dry-run)
+            DRY_RUN=1
+            shift
+            ;;
+        -h|-help|--help)
+            SHOW_HELP=1
+            shift
+            ;;
+        -*|--*)
+            echo "Unknown option $1"
+            exit 1
+            ;;
+        *)
+            NEWFREQ="$1"
+            shift
+            ;;
+    esac
+done
+
+#Set governor to performance or powersave if required commandline present:
+#Force the laptop to performance, for now:
+if [ "$SET_GOVERNOR" -eq 0 -a "$NEWFREQ" -ne 0 -a "$OVERRIDE_HOSTNAME_CHECK" -eq 0 -a "$CURRENT_HOSTNAME" == "$VALID_LAPTOP_HOSTNAME" ]; then
+    SET_GOVERNOR=1
+    GOVERNOR="performance"
+fi
+
+
+PROGNAME=$(basename "$0")
+if [ "$SHOW_HELP" -eq 1 ]; then
+    echo "CpuFreq script to fix the maximum CpuFreq for cool or max operation - by JMC"
+    echo "Usage:"
+    echo "        $PROGNAME [frequency or abbreviation]"
+    echo "Examples:"
+    echo "        $PROGNAME turbo        #SHORTHAND for going back to the regular max speed."
+    echo "        $PROGNAME 3501000      #Set the frequency to 3.501GHz."
+    echo "        $PROGNAME 35           #SHORTHAND Set the frequency to 3.5GHz."
+    echo "        $PROGNAME -n 35        #See what would happen without doing anything since -n is dry run."
+    echo "        $PROGNAME -g schedutil"
+    echo "Parameters (all contexts):"
+    echo "        -g GOVERNOR, --governor GOVERNOR  Set governor."
+    echo "        -q, --quiet                       Don't print anything on success. Not implemented."
+    echo "        -n, --dry-run                     Not really."
+    echo "        -o, --override-host               Override hostname check."
+    echo "        -h, --help                        Show this help message."
+    echo ""
+    exit 1
+fi
+
+
+#Validate system has CPUFREQ:
+if [ ! -f "$AVAILABLE_FREQS" ]; then
+    if [ -f "$MAX_FREQS" ]; then
+        :
+    else
+        >&2 echo -e "${RED}ERROR${NOCOLOR}: System doesn't appear to have CPUFREQ, at least the file '${AVAILABLE_FREQS}' doesn't exist."
+        exit 1
+    fi
+fi
+
+#Read current frequency:
+CURRENT_FREQ=`cat "$CURRENT_FREQ_FILENAME"`
+echo -e "${YELLOWBOLD}Current frequency: ${CURRENT_FREQ} KHz${NOCOLOR}"
+
+#Read current governor:
+CURRENT_GOVERNOR=`cat "$CURRENT_GOVERNOR_FILENAME"`
+echo -e "${YELLOWBOLD}Current governor: ${CURRENT_GOVERNOR}${NOCOLOR}"
+
+
+#Read turbo freq:
+if [ ! -f "$AVAILABLE_FREQS" ]; then
+    if [ -f "$MAX_FREQS" ]; then
+        read -d' ' TURBO_FREQ < "$MAX_FREQS";
+    fi
+else
+    read -d' ' TURBO_FREQ < "$AVAILABLE_FREQS";
+
+fi
+#testing: echo "Turbo: ${TURBO_FREQ}"
+
+
+##Validate arg specified:
+#if [ "$NEWFREQ" -eq 0 ]; then
+#    #Use default:
+#    NEWFREQ="$DEFAULT_FREQ"
+#fi
+
+#Replace by turbo freq if specified:
+if [ "$NEWFREQ" = "turbo" ]; then
+    NEWFREQ="$TURBO_FREQ"
+fi
+
+#Validate numeric:
+[ "$NEWFREQ" -eq "$NEWFREQ" ] 2>/dev/null
+isNumeric=$?
+if [ $isNumeric -ne 0 ]; then
+    >&2 echo -e "${RED}ERROR${NOCOLOR}: You must specify a numeric CPU frequency. '${NEWFREQ}' was specified."
+    exit 1
+fi
+
+#Convert abbreviation "25" -> "2500000"
+if [ "$NEWFREQ" -lt 100 ]; then
+    NEWFREQ=$(($NEWFREQ * 100000))
+fi
+
+#Available frequencies list:
+if [ ! -f "$AVAILABLE_FREQS" ]; then
+    if [ -f "$MAX_FREQS" ]; then
+        AVAILABLE_FREQS_LIST=$(seq -s' ' $(cat $MAX_FREQS) -100000 $(cat $MIN_FREQS))
+    fi
+else
+    AVAILABLE_FREQS_LIST=$(cat "$AVAILABLE_FREQS")
+fi
+AVAILABLE_GOVERNORS_LIST=$(cat "$AVAILABLE_GOVERNORS")
+
+
+#Validate arg specified:
+if [ $NEWFREQ -eq 0 ]; then
+    #Use default:
+    # NEWFREQ="$DEFAULT_FREQ"
+    # >&2 echo -e "Using default of $NEWFREQ KHz"
+    #Quitting without setting anything:
+    >&2 echo -e -n "${GREEN}Available frequencies:${NOCOLOR} "
+    echo "$AVAILABLE_FREQS_LIST"
+    >&2 echo -e -n "${GREEN}Available governors:${NOCOLOR} "
+    echo "$AVAILABLE_GOVERNORS_LIST"
+    if [ "$SET_GOVERNOR" -eq 0 ]; then
+        exit 1
+    fi
+else
+    >&2 echo -e "Setting cores to $NEWFREQ KHz"
+fi
+
+
+#Validate matches an available freq:
+FOUND=0
+while read -d' ' FREQ; do
+    if [ $NEWFREQ -eq $FREQ ]; then
+        FOUND=1
+    fi
+done < <(echo "$AVAILABLE_FREQS_LIST")
+if [ "$NEWFREQ" -ne 0 -a $FOUND -eq 0 ]; then
+    >&2 echo -e "${RED}ERROR${NOCOLOR}: You must specify a valid CPU frequency. These are the available frequencies:"
+    echo "$AVAILABLE_FREQS_LIST"
+    exit 1
+fi
+
+
+#Allow the user to cancel while getting asked for sudo before the loop, otherwise
+#he will have to cancel 8 times, once per CPU:
+if sudo true; then
+    :
+else
+    >&2 echo -e "${RED}ERROR${NOCOLOR}: User cancelled."
+    exit 1
+fi
+
+#Count CPUs:
+CPU_COUNT=`find "/sys/devices/system/cpu/" -maxdepth 1 -type d -name "cpu*" | grep 'cpu[0-9]\+' | wc -l`
+[ "$CPU_COUNT" -eq "$CPU_COUNT" ] 2>/dev/null
+isNumeric=$?
+if [ $isNumeric -ne 0 ] || [ "$CPU_COUNT" -le 0 ]; then
+    >&2 echo -e "${RED}ERROR${NOCOLOR}: Couldn't deduce the number of CPUs from the dirs at '/sys/devices/system/cpu/'. Got '$CPU_COUNT'."
+    exit 1
+fi
+LAST_CPU=$(($CPU_COUNT - 1))
+>&2 echo -e -n "${GREEN}Found ${CPU_COUNT} CPUs${NOCOLOR}"
+
+#Finally, loop over the CPUs:
+if [ "$NEWFREQ" -ne 0 ]; then
+    for a in `seq 0 $LAST_CPU`; do
+        if [ "$DRY_RUN" -eq 0 ]; then
+            echo "$NEWFREQ" | sudo tee /sys/devices/system/cpu/cpu$a/cpufreq/scaling_max_freq >/dev/null;
+        fi
+        >&2 echo -n ".";
+    done  #CpuFreq
+fi
+
+#Set governor if required:
+if [ "$SET_GOVERNOR" -eq 1 ]; then
+    #Either performance or powersave:
+    >&2 echo -n " ";
+    for a in `seq 0 $LAST_CPU`; do
+        if [ "$DRY_RUN" -eq 0 ]; then
+            echo "$GOVERNOR" | sudo tee /sys/devices/system/cpu/cpu$a/cpufreq/scaling_governor >/dev/null;
+        fi
+        >&2 echo -n ".";
+    done  #CpuFreq
+    >&2 echo
+    >&2 echo -e "${GREEN}CPUs governors set to ${GOVERNOR}${NOCOLOR}"
+else
+    >&2 echo
+fi
+
+#Done:
+if [ "$NEWFREQ" -ne 0 ]; then
+    >&2 echo -e "${GREEN}CPUs set to ${NEWFREQ} KHz${NOCOLOR}"
+fi
+
+
