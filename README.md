@@ -76,8 +76,8 @@ I fixed the speed to 3.4GHz using CpuFreq:
         Available frequencies: 4200000 4100000 4000000 3900000 3800000 3700000 3600000 3500000 3400000 3300000 3200000 3100000 3000000 2900000 2800000 2700000 2600000 2500000 2400000 2300000 2200000 2100000 2000000 1900000 1800000 1700000 1600000 1500000 1400000 1300000 1200000 1100000 1000000 900000 800000 700000 600000 500000 400000
         Available governors: performance powersave
         root@tina:/home/nadie# 
-        root@tina:/home/nadie# 
-        root@tina:/home/nadie# 
+
+        
         root@tina:/home/nadie# CpuFreq 34  --performance
         Current frequency: 3400000 KHz
         Current governor: performance
@@ -117,5 +117,21 @@ and don't forget to call sudo update-grub after that:
 but if the available frequencies don't include 3.4GHz, then it's preferred to go without schedutil and use the performance driver of intel pstates instead. That may happen in laptops which don't reach 3.4GHz without turbo, that is, it's higher than their nominal speed.
 
 Good luck!
+--JMC 2026-10-11
+
+Supplementary files:
+A) 
+      the lenovo_fix_coil_whine.c file comes from a PDF called "Controlling Processor C-State
+Usage in Linux" by Stuart Hayes from Nov2013.
+      When started for instance with 250 as parameter, it makes the CPU stay in C0 and C1 never reaching C7. Which might be desirable under cool conditions to prevent the laptop charger and internal PSU go into GREEN MODE, which is switching frequency in the audible range, which is insane if you ask me, completely insane.
+      Run it like so:
+
+                 /usr/local/bin/lenovo_fix_coil_whine 250
+
+B)
+      The benchmark.c is part of another repo of mine, with a simple loop that forces the CPU to go round and round, it is basically a loop on the IDIV intel assembly language instruction.
+
+Cheers!
+Good Luck!
 --jm
 
