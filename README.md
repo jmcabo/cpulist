@@ -126,8 +126,7 @@ Good luck!
 
 *A)*
 
-      the lenovo_fix_coil_whine.c file comes from a PDF called "Controlling Processor C-State
-Usage in Linux" by Stuart Hayes from Nov2013.
+The lenovo_fix_coil_whine.c file comes from a PDF called "Controlling Processor C-State Usage in Linux" by Stuart Hayes from Nov2013.
       When started for instance with 250 as parameter, it makes the CPU stay in C0 and C1 never reaching C7. Which might be desirable under cool conditions to prevent the laptop charger and internal PSU go into GREEN MODE, which is switching frequency in the audible range, which is insane if you ask me, completely insane.
       Run it like so:
 
