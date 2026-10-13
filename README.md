@@ -138,7 +138,7 @@ I made instructions on how to run it automatically as a service in my blog and p
 
 *B)*
 
-      The benchmark.c is part of another repo of mine, with a simple loop that forces the CPU to go round and round, it is basically a loop on the IDIV intel assembly language instruction.
+The benchmark.c is part of another repo of mine, with a simple loop that forces the CPU to go round and round, it is basically a loop on the IDIV intel assembly language instruction.
 
 Cheers!
 Good Luck!
