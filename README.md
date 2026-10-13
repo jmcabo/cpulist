@@ -1,4 +1,6 @@
 # CpuList and CpuFreq
+Copyright (c) 2012,2013,2015,2016,2022,2025,2026, Juan Manuel Cabo. All Rights Reserved.
+
 CpuList and CpuFreq two great little utils I wrote for managing intel CPU speed and temp. The names are not so originals. CpuList is written in D and CpuFreq is written in BASH shell.
 
 Example run:
