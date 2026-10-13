@@ -131,7 +131,7 @@ Usage in Linux" by Stuart Hayes from Nov2013.
       When started for instance with 250 as parameter, it makes the CPU stay in C0 and C1 never reaching C7. Which might be desirable under cool conditions to prevent the laptop charger and internal PSU go into GREEN MODE, which is switching frequency in the audible range, which is insane if you ask me, completely insane.
       Run it like so:
 
-                 /usr/local/bin/lenovo_fix_coil_whine 250
+        /usr/local/bin/lenovo_fix_coil_whine 250
                  
 I made instructions on how to run it automatically as a service in my blog and put the .service file there:
       
