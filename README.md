@@ -133,9 +133,9 @@ Usage in Linux" by Stuart Hayes from Nov2013.
 
                  /usr/local/bin/lenovo_fix_coil_whine 250
                  
-      I made instructions on how to run it automatically as a service in my blog and put the .service file there:
-
-                 https://zenstep.com.ar/programacion/lenovo
+I made instructions on how to run it automatically as a service in my blog and put the .service file there:
+      
+      [https://zenstep.com.ar/programacion/lenovo|https://zenstep.com.ar/programacion/lenovo]
 
 *B)*
 
